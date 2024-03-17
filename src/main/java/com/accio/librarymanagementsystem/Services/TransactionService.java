@@ -7,6 +7,7 @@ import com.accio.librarymanagementsystem.Enums.TransactionStatus;
 import com.accio.librarymanagementsystem.Repositories.BookRepository;
 import com.accio.librarymanagementsystem.Repositories.CardRepository;
 import com.accio.librarymanagementsystem.Repositories.TransactionRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.engine.transaction.jta.platform.internal.SynchronizationRegistryBasedSynchronizationStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class TransactionService {
 
@@ -44,14 +46,19 @@ public class TransactionService {
         if(bookOptional.isEmpty()){
             throw new Exception("BookId entered is incorrect");
         }
-        Book book = bookOptional.get();
+        Book book = bookOptional.get(); //100% guarantee that book is there
+
+        log.info("Book Object is "+ book.toString());
 
         //2. Library Card should be valid -->
         Optional<LibraryCard> optionalLibraryCard = cardRepository.findById(cardId);
         if(optionalLibraryCard.isEmpty()){
+            log.error("cardId is incorrect");
             throw new Exception("CardId entered is incorrect");
         }
         LibraryCard card = optionalLibraryCard.get();
+
+        log.info("The card object is "+ card.toString());
 
         //here we are starting the transaction --
         Transaction transaction = new Transaction();
@@ -63,6 +70,7 @@ public class TransactionService {
         if(book.getIsIssued() == true){
             transaction.setTransactionStatus(TransactionStatus.FAILURE);
             transactionRepository.save(transaction);
+            log.debug("Book is in issued status");
             return "Book is already issued to cardId " + card.getCardNo();
         }
 
